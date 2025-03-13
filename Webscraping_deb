@@ -1,0 +1,88 @@
+from selenium import webdriver 
+from selenium.webdriver.remote import webelement 
+from selenium.webdriver.support.ui import WebDriverWait 
+from selenium.webdriver.common.by import By 
+from selenium.webdriver.common.keys import Keys 
+from selenium.webdriver.support import expected_conditions as EC 
+import pandas as pd 
+import time 
+import os 
+from datetime import datetime 
+from datetime import date
+from datetime import datetime, timedelta
+from selenium.webdriver import ActionChains 
+from selenium.webdriver.support.ui import Select 
+import win32com.client as win32
+
+driver = webdriver.Edge()
+
+Lista=['RDAS11','RDAS21','RDAS12','EMIV11','ESAN11','CVRDA6','RATL11','VOLC31','VOLC11', 'CSVO12', 'SKIN11', 'SKIN12', 'SAIP11', 'ORIG21', 'ENAT32', 'BODY12', 'BODY13', 'VIMT13', 'AMERC2', 'APOL11', 'AGRU12', 'MOVI28', 'VOLC41', 'LXIN12', 'LLISB2', 'AGRU11', 'VOLC21', 'IFPT11', 'AMERF2', 'GGBRA8', 'TAEEC4','CMIN21', 'LIGHD2']
+Lista_alt = ['RDAS11', 'RDAS21', 'RDAS12', 'EMIV11', 'ESAN11', 'CVRDA6', 'RATL11', 'VOLC31', 'VOLC11', 'CSVO12', 'SKIN11', 'SKIN12', 'SAIP11', 'ORIG21', 'ENAT32', 'BODY12', 'BODY13', 'VIMT13', 'AMERC2', 'APOL11', 'AGRU12', 'MOVI28', 'VOLC41', 'LXIN12', 'LLISB2', 'AGRU11', 'VOLC21', 'IFPT11', 'AMERF2', 'GGBRA8']
+DATA = datetime.today().strftime('%d/%m/%Y')
+
+if datetime.today().weekday() == 0:
+    var_day = 3
+else:
+    var_day = 1
+
+DATA_alt = (datetime.today() - timedelta(days=var_day)).strftime('%d/%m/%Y')
+PU = []
+PU_alt = []
+
+for i in Lista:
+    try:
+        driver.get('http://www.debentures.com.br/exploreosnd/consultaadados/emissoesdedebentures/puhistorico_f.asp')
+
+        Lista = driver.find_element(By.NAME, "ativo").send_keys(i)
+        time.sleep(2)
+
+        Inicio = driver.find_element(By.NAME,"dt_ini").send_keys(DATA)
+        Fim = driver.find_element(By.NAME, "dt_fim").send_keys(DATA)
+
+        Enviar = driver.find_element(By.NAME, "Submit").click()
+        
+        nome_coleta = driver.find_element(By.XPATH, "/html/body/table[2]/tbody/tr[1]/td[2]/table[2]/tbody/tr[2]/td[3]/table[2]/tbody/tr/td[2]").text
+
+        preço = driver.find_element(By.XPATH, '/html/body/table[2]/tbody/tr[1]/td[2]/table[2]/tbody/tr[2]/td[3]/table[2]/tbody/tr[1]/td[6]').text
+        PU.append([DATA,i,preço, nome_coleta])
+    except:
+        continue
+
+for i in Lista_alt:
+    try:
+        driver.get('https://www.debentures.com.br/exploreosnd/consultaadados/mercadosecundario/precosdenegociacao_f.asp')
+
+        Lista = driver.find_element(By.NAME, "ativo").send_keys(i)
+        time.sleep(2)
+
+        Inicio = driver.find_element(By.NAME,"dt_ini").send_keys(DATA_alt)
+        Fim = driver.find_element(By.NAME, "dt_fim").send_keys(DATA_alt)
+
+        Enviar = driver.find_element(By.NAME, "Submit32").click()
+        
+        nome_coleta = driver.find_element(By.XPATH, "/html/body/table[2]/tbody/tr/td[2]/table[1]/tbody/tr[3]/td[3]/table/tbody/tr[3]/td[5]").text
+
+        preço = driver.find_element(By.XPATH, '/html/body/table[2]/tbody/tr/td[2]/table[1]/tbody/tr[3]/td[3]/table/tbody/tr[3]/td[15]').text
+        PU_alt.append([DATA_alt,i,preço, nome_coleta])
+    except:
+        continue
+
+df0 = pd.DataFrame(PU)
+df0.columns = ['Data' ,'Ativo', 'Preco_Unit', 'Nome coletado']
+df = df0[['Data' ,'Ativo', 'Preco_Unit']].copy()
+df['Preco_Unit'] = df['Preco_Unit'].astype('string')
+df['Preco_Unit'] = df['Preco_Unit'].replace({'\$':'', 'R':'', ' ':''}, regex = True)
+df.set_index(['Data'])
+dia_hoje_save = datetime.today().strftime('%Y%m%d')
+df.to_excel("path_to_save.xlsx")
+df0
+
+df1 = pd.DataFrame(PU_alt)
+df1.columns = ['Data' ,'Ativo', 'Preco_Unit', 'Nome coletado']
+df_1 = df1[['Data' ,'Ativo', 'Preco_Unit']].copy()
+df_1['Preco_Unit'] = df_1['Preco_Unit'].astype('string')
+df_1['Preco_Unit'] = df_1['Preco_Unit'].replace({'\$':'', 'R':'', ' ':''}, regex = True)
+df_1.set_index(['Data'])
+dia_hoje_save = (datetime.today()).strftime('%Y%m%d')
+df_1.to_excel("path_to_save.xlsx")
+df1
